@@ -1,4 +1,26 @@
 ﻿namespace CatalogService.Application.Dtos
 {
-    public record ProductDto(Guid Id, string Name, string? Description, string? ImageUrl, Guid CategoryId, decimal Price, int Amount);
+    public class ProductDto
+    {
+        public ProductDto(Guid id, string name, string description, string imageUrl, Guid categoryId, decimal price, int amount)
+        {
+            Id = id;
+            Name = name;
+            Description = description;
+            ImageUrl = imageUrl;
+            CategoryId = categoryId;
+            Price = price;
+            Amount = amount;               
+        }
+
+        public Guid Id { get; set; }
+        public string Name { get; set; } = default!;
+        public string? Description { get; set; }
+        public string? ImageUrl { get; set; }
+        public decimal Price { get; set; }
+        public int Amount { get; set; }
+        public Guid CategoryId { get; set; }
+
+        public Dictionary<string, string>? Links { get; set; }
+    }
 }

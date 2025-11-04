@@ -61,12 +61,40 @@ namespace CatalogService.Application.Services.Product
             await _repo.UpdateAsync(existing, ct);
         }
 
-        public async Task<IEnumerable<ProductDto>> ListByCategoryAsync(Guid categoryId, CancellationToken ct = default)
+        public async Task<IEnumerable<ProductDto>> ListByCategoryAsync(
+            Guid categoryId,
+            int page,
+            int pageSize,
+            CancellationToken ct = default)
         {
+            if (page <= 0) throw new ArgumentOutOfRangeException(nameof(page));
+            if (pageSize <= 0) throw new ArgumentOutOfRangeException(nameof(pageSize));
+
             var list = await _repo.ListByCategoryAsync(categoryId, ct);
-            return list.Select(Map).ToList();
+
+            var paged = list
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(Map)
+                .ToList();
+
+            return paged;
         }
 
-        private static ProductDto Map(Domain.Entities.Product p) => new(p.Id, p.Name, p.Description, p.ImageUrl, p.CategoryId, p.Price, p.Amount);
+        public async Task DeleteByCategoryAsync(Guid categoryId, CancellationToken ct = default)
+        {
+            if (!await _categoryRepo.ExistsAsync(categoryId, ct))
+                throw new InvalidOperationException("Category does not exist.");
+
+            var products = await _repo.ListByCategoryAsync(categoryId, ct);
+            if (!products.Any()) return;
+
+            foreach (var product in products)
+            {
+                await _repo.DeleteAsync(product, ct);
+            }
+        }
+
+        private static ProductDto Map(Domain.Entities.Product p) => new (p.Id, p.Name, p.Description, p.ImageUrl, p.CategoryId, p.Price, p.Amount);
     }
 }
