@@ -7,6 +7,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.dbmdl
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -52,3 +59,12 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# User-specific files
+*.vsidx
+*.sdf
+*.VC.db
+*.log
+
+# LiteDB
+*.db
