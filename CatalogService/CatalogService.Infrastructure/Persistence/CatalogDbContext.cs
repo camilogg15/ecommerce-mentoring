@@ -33,9 +33,9 @@ namespace CatalogService.Infrastructure.Persistence
                 b.ToTable("Products");
                 b.HasKey(p => p.Id);
                 b.Property(p => p.Name).IsRequired().HasMaxLength(50);
-                b.Property(p => p.Description).HasColumnType("nvarchar(max)");
+                b.Property(p => p.Description).HasColumnType("TEXT");
                 b.Property(p => p.ImageUrl).HasMaxLength(200).IsUnicode(false);
-                b.Property(p => p.Price).HasColumnType("decimal(18,2)").IsRequired();
+                b.Property(p => p.Price).HasColumnType("REAL").IsRequired();
                 b.Property(p => p.Amount).IsRequired();
                 b.HasOne(p => p.Category)
                     .WithMany(c => c.Products)
