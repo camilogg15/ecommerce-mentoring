@@ -1,9 +1,11 @@
+using Asp.Versioning;
 using CartService.Application.Services.Cart;
 using CartService.Application.Validators;
 using CartService.Domain.Interfaces;
 using CartService.Domain.Models;
 using CartService.Infrastructure.LiteDb;
 using FluentValidation;
+using Microsoft.OpenApi.Models;
 
 namespace CartService
 {
@@ -19,6 +21,18 @@ namespace CartService
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+            })
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
+
             // Add settings
             builder.Services.Configure<LiteDbSettings>(builder.Configuration.GetSection("LiteDbSettings"));
 
@@ -29,14 +43,35 @@ namespace CartService
             builder.Services.AddScoped<ICartRepository, CartRepository>();
             builder.Services.AddScoped<ICartService, Application.Services.Cart.CartService>();
 
+            // Swagger
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Cart Service API",
+                    Version = "v1"
+                });
+                options.SwaggerDoc("v2", new OpenApiInfo
+                {
+                    Title = "Cart Service API",
+                    Version = "v2"
+                });
+                var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Cart API v1");
+                    options.SwaggerEndpoint("/swagger/v2/swagger.json", "Cart API v2");
+                });
             }
 
             app.UseHttpsRedirection();
