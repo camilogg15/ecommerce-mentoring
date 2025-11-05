@@ -25,7 +25,7 @@ namespace CartService.Controllers.v1
         public IActionResult GetCart(string cartId)
         {
             var items = _cartService.GetItems(cartId);
-            return Ok(new { cartId, items });
+            return Ok(new Cart { Key = cartId, Items = items });
         }
 
         [HttpPost("{cartId}/items")]
