@@ -1,4 +1,6 @@
-﻿using CatalogService.Domain.Repositories;
+﻿using CatalogService.Application.Messaging;
+using CatalogService.Domain.Repositories;
+using CatalogService.Infrastructure.Messaging;
 using CatalogService.Infrastructure.Persistence;
 using CatalogService.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +17,8 @@ namespace CatalogService.Infrastructure.DependencyInjection
 
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<IProductRepository, ProductRepository>();
+
+            services.AddSingleton<IMessagePublisher, RabbitMqPublisher>();
 
             return services;
         }

@@ -9,7 +9,7 @@ namespace CatalogService.Domain.Entities
         
         }
 
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        public int Id { get; private set; }
         public string Name { get; private set; } = null!;
         public string? Description { get; private set; }
         public string? ImageUrl { get; private set; }

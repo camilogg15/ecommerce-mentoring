@@ -1,4 +1,5 @@
-﻿using CatalogService.Application.Services.Product;
+﻿using CatalogService.Application.Messaging;
+using CatalogService.Application.Services.Product;
 using CatalogService.Domain.Entities;
 using CatalogService.Domain.Repositories;
 using Moq;
@@ -9,11 +10,12 @@ namespace CatalogService.Tests.Unit.Services
     {
         private readonly Mock<IProductRepository> _prodRepo = new();
         private readonly Mock<ICategoryRepository> _catRepo = new();
+        private readonly Mock<IMessagePublisher> _publisher = new();
         private readonly ProductService _service;
 
         public ProductServiceTests()
         {
-            _service = new ProductService(_prodRepo.Object, _catRepo.Object);
+            _service = new ProductService(_prodRepo.Object, _catRepo.Object, _publisher.Object);
         }
 
         [Fact]

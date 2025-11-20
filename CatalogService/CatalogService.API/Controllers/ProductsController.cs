@@ -18,7 +18,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<ProductDto>> GetById(Guid id)
+        public async Task<ActionResult<ProductDto>> GetById(int id)
         {
             var product = await _productService.GetAsync(id);
             if (product == null)
@@ -51,14 +51,14 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, ProductDto dto)
+        public async Task<IActionResult> Update(int id, ProductDto dto)
         {
             await _productService.UpdateAsync(id, dto.Name, dto.CategoryId, dto.Price, dto.Amount, dto.Description, dto.ImageUrl);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(int id)
         {
             await _productService.DeleteAsync(id);
             return NoContent();
