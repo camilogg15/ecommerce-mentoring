@@ -2,6 +2,8 @@
 using CartService.Application.Services.Cart;
 using CartService.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
+using RabbitMQ.Client;
+using System.Text;
 
 namespace CartService.Controllers.v2
 {
@@ -36,6 +38,30 @@ namespace CartService.Controllers.v2
         {
             _cartService.RemoveItem(cartId, itemId);
             return Ok();
+        }
+
+        [HttpPost("debug-rabbit")]
+        public async Task<IActionResult> DebugRabbit()
+        {
+            var factory = new ConnectionFactory() { HostName = "localhost" };
+            using var conn = await factory.CreateConnectionAsync();
+            using var channel = await conn.CreateChannelAsync();
+
+            var body = Encoding.UTF8.GetBytes("""
+            { 
+              "Type": "ProductUpdated",
+              "Data": { "ProductId": 2, "Name": "Moto", "Price": 1200 }
+            }
+            """);
+
+            await channel.BasicPublishAsync(
+                exchange: "",
+                routingKey: "catalog.events",
+                mandatory: false,
+                body: body
+            );
+
+            return Ok("Message posted");
         }
     }
 }

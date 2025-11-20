@@ -7,5 +7,6 @@ namespace CartService.Application.Services.Cart
         IEnumerable<CartItem> GetItems(string cartId);
         void AddItem(string cartId, CartItem item);
         void RemoveItem(string cartId, int itemId);
+        Task UpdateProductInAllCartsAsync(int productId, string name, decimal price);
     }
 }

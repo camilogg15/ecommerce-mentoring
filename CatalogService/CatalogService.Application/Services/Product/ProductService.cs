@@ -1,5 +1,9 @@
 ﻿using CatalogService.Application.Dtos;
+using CatalogService.Application.Events;
+using CatalogService.Application.Messaging;
+using CatalogService.Domain.Entities;
 using CatalogService.Domain.Repositories;
+using System.Threading;
 
 namespace CatalogService.Application.Services.Product
 {
@@ -7,11 +11,13 @@ namespace CatalogService.Application.Services.Product
     {
         private readonly IProductRepository _repo;
         private readonly ICategoryRepository _categoryRepo;
+        private readonly IMessagePublisher _publisher;
 
-        public ProductService(IProductRepository repo, ICategoryRepository categoryRepo)
+        public ProductService(IProductRepository repo, ICategoryRepository categoryRepo, IMessagePublisher publisher)
         {
             _repo = repo;
             _categoryRepo = categoryRepo;
+            _publisher = publisher;
         }
 
         public async Task<ProductDto> CreateAsync(string name, Guid categoryId, decimal price, int amount, string? description = null, string? imageUrl = null, CancellationToken ct = default)
@@ -25,14 +31,14 @@ namespace CatalogService.Application.Services.Product
             return Map(product);
         }
 
-        public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+        public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
             var existing = await _repo.GetByIdAsync(id, ct);
             if (existing == null) throw new InvalidOperationException("Product not found.");
             await _repo.DeleteAsync(existing, ct);
         }
 
-        public async Task<ProductDto?> GetAsync(Guid id, CancellationToken ct = default)
+        public async Task<ProductDto?> GetAsync(int id, CancellationToken ct = default)
         {
             var p = await _repo.GetByIdAsync(id, ct);
             return p == null ? null : Map(p);
@@ -44,7 +50,7 @@ namespace CatalogService.Application.Services.Product
             return list.Select(Map).ToList();
         }
 
-        public async Task UpdateAsync(Guid id, string name, Guid categoryId, decimal price, int amount, string? description = null, string? imageUrl = null, CancellationToken ct = default)
+        public async Task UpdateAsync(int id, string name, Guid categoryId, decimal price, int amount, string? description = null, string? imageUrl = null, CancellationToken ct = default)
         {
             var existing = await _repo.GetByIdAsync(id, ct);
             if (existing == null) throw new InvalidOperationException("Product not found.");
@@ -59,6 +65,9 @@ namespace CatalogService.Application.Services.Product
             existing.SetImage(imageUrl);
 
             await _repo.UpdateAsync(existing, ct);
+
+            var evt = new ProductUpdatedEvent(id, name, price);
+            await _publisher.PublishAsync("ProductUpdated", evt, ct);
         }
 
         public async Task<IEnumerable<ProductDto>> ListByCategoryAsync(
@@ -95,6 +104,6 @@ namespace CatalogService.Application.Services.Product
             }
         }
 
-        private static ProductDto Map(Domain.Entities.Product p) => new (p.Id, p.Name, p.Description, p.ImageUrl, p.CategoryId, p.Price, p.Amount);
+        private static ProductDto Map(Domain.Entities.Product p) => new(p.Id, p.Name, p.Description, p.ImageUrl, p.CategoryId, p.Price, p.Amount);
     }
 }

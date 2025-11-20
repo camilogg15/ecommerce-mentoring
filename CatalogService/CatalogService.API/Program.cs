@@ -2,9 +2,11 @@
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CatalogService.API.Swagger;
+using CatalogService.Application.Messaging;
 using CatalogService.Application.Services.Category;
 using CatalogService.Application.Services.Product;
 using CatalogService.Domain.Repositories;
+using CatalogService.Infrastructure.Messaging;
 using CatalogService.Infrastructure.Persistence;
 using CatalogService.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +28,7 @@ namespace CatalogService.API
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddSingleton<IMessagePublisher, RabbitMqPublisher>();
 
             builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 

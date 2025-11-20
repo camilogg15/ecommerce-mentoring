@@ -25,12 +25,12 @@ namespace CatalogService.Infrastructure.Repositories
             await _ctx.SaveChangesAsync(ct);
         }
 
-        public async Task<bool> ExistsAsync(Guid id, CancellationToken ct = default)
+        public async Task<bool> ExistsAsync(int id, CancellationToken ct = default)
         {
             return await _ctx.Products.AsNoTracking().AnyAsync(p => p.Id == id, ct);
         }
 
-        public async Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public async Task<Product?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _ctx.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id, ct);
         }

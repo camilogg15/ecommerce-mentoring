@@ -35,6 +35,29 @@ namespace CartService.Infrastructure.LiteDb
             col.Delete(itemId);
         }
 
+        public void UpdateProductInCart(string cartId, int productId, string name, decimal price)
+        {
+            using var db = new LiteDatabase(_databasePath);
+            var col = db.GetCollection<CartItem>(SanitizeCartId(cartId));
+
+            var item = col.FindById(productId);
+            if (item == null)
+                return;
+
+            item.Name = name;
+            item.Price = price;
+
+            col.Update(item);
+        }
+
+        public IEnumerable<string> GetAllCartIds()
+        {
+            using var db = new LiteDatabase(_databasePath);
+            return db.GetCollectionNames()
+                .Where(c => c.StartsWith("cart_"))
+                .Select(c => c.Replace("cart_", "").Replace("_", "-"));
+        }
+
         private string SanitizeCartId(string cartId)
         {
             return $"cart_{cartId.Replace("-", "_")}";

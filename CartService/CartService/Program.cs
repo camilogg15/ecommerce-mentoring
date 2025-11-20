@@ -1,9 +1,14 @@
 using Asp.Versioning;
+using CartService.Application.Contracts.Messaging;
+using CartService.Application.Events;
+using CartService.Application.Handlers;
 using CartService.Application.Services.Cart;
+using CartService.Application.Services.Dispatcher;
 using CartService.Application.Validators;
 using CartService.Domain.Interfaces;
 using CartService.Domain.Models;
 using CartService.Infrastructure.LiteDb;
+using CartService.Infrastructure.Messaging;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
 
@@ -42,6 +47,16 @@ namespace CartService
             // Add services
             builder.Services.AddScoped<ICartRepository, CartRepository>();
             builder.Services.AddScoped<ICartService, Application.Services.Cart.CartService>();
+
+            builder.Services.AddSingleton<MessageDispatcher>();
+            builder.Services.AddSingleton<IMessageListener, RabbitMqListener>();
+
+            // Handlers
+            builder.Services.AddTransient<IMessageHandler, ProductUpdatedHandler>();
+            builder.Services.AddSingleton<MessageDispatcher>();
+
+            // Hosted service
+            builder.Services.AddHostedService<MessageListenerHostedService>();
 
             // Swagger
             builder.Services.AddEndpointsApiExplorer();
