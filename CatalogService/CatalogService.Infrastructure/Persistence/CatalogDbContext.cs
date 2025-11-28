@@ -32,6 +32,7 @@ namespace CatalogService.Infrastructure.Persistence
             {
                 b.ToTable("Products");
                 b.HasKey(p => p.Id);
+                b.Property(p => p.Id).ValueGeneratedOnAdd();
                 b.Property(p => p.Name).IsRequired().HasMaxLength(50);
                 b.Property(p => p.Description).HasColumnType("TEXT");
                 b.Property(p => p.ImageUrl).HasMaxLength(200).IsUnicode(false);
