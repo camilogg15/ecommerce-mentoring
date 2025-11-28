@@ -17,6 +17,11 @@ namespace CartService.Application.Services.Cart
             return _repository.GetItems(cartId);
         }
 
+        public IEnumerable<string> GetItems()
+        {
+            return _repository.GetAllCartIds();
+        }
+
         public void AddItem(string cartId, CartItem item)
         {
             if (item.Quantity <= 0)
