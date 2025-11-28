@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using CartService.Application.Services.Cart;
 using CartService.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartService.Controllers.v1
@@ -20,8 +21,17 @@ namespace CartService.Controllers.v1
             _cartService = cartService;
         }
 
+        [HttpGet()]
+        [Authorize(Policy = "CustomerOrManager")]
+        public IActionResult GetCartsIds()
+        {
+            var items = _cartService.GetItems();
+            return Ok(items);
+        }
+
         /// <summary>Get cart info by key.</summary>
         [HttpGet("{cartId}")]
+        [Authorize(Policy = "CustomerOrManager")]
         public IActionResult GetCart(string cartId)
         {
             var items = _cartService.GetItems(cartId);
@@ -29,6 +39,7 @@ namespace CartService.Controllers.v1
         }
 
         [HttpPost("{cartId}/items")]
+        [Authorize(Policy = "CustomerOrManager")]
         public IActionResult AddItem(string cartId, [FromBody] CartItem item)
         {
             _cartService.AddItem(cartId, item);
@@ -36,6 +47,7 @@ namespace CartService.Controllers.v1
         }
 
         [HttpDelete("{cartId}/items/{itemId}")]
+        [Authorize(Policy = "CustomerOrManager")]
         public IActionResult DeleteItem(string cartId, int itemId)
         {
             _cartService.RemoveItem(cartId, itemId);

@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using CatalogService.Application.Dtos;
 using CatalogService.Application.Services.Product;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CatalogService.API.Controllers
@@ -18,6 +19,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Policy = "CustomerOrManager")]
         public async Task<ActionResult<ProductDto>> GetById(int id)
         {
             var product = await _productService.GetAsync(id);
@@ -37,6 +39,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "CustomerOrManager")]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll([FromQuery] Guid categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var products = await _productService.ListByCategoryAsync(categoryId, page, pageSize);
@@ -44,6 +47,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "ManagerOnly")]
         public async Task<ActionResult<ProductDto>> Create(ProductDto dto)
         {
             var created = await _productService.CreateAsync(dto.Name, dto.CategoryId, dto.Price, dto.Amount, dto.Description, dto.ImageUrl);
@@ -51,6 +55,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> Update(int id, ProductDto dto)
         {
             await _productService.UpdateAsync(id, dto.Name, dto.CategoryId, dto.Price, dto.Amount, dto.Description, dto.ImageUrl);
@@ -58,6 +63,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             await _productService.DeleteAsync(id);
