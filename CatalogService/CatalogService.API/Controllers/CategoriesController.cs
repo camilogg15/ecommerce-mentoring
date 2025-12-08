@@ -2,6 +2,7 @@
 using CatalogService.Application.Dtos;
 using CatalogService.Application.Services.Category;
 using CatalogService.Application.Services.Product;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CatalogService.API.Controllers
@@ -21,6 +22,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "CustomerOrManager")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll()
         {
             var categories = await _categoryService.ListAsync();
@@ -28,6 +30,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "ManagerOnly")]
         public async Task<ActionResult<CategoryDto>> Create(CategoryDto dto)
         {
             var created = await _categoryService.CreateAsync(dto.Name, dto.ImageUrl, dto.ParentCategoryId);
@@ -35,6 +38,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> Update(Guid id, CategoryDto dto)
         {
             await _categoryService.UpdateAsync(id, dto.Name, dto.ImageUrl, dto.ParentCategoryId);
@@ -42,6 +46,7 @@ namespace CatalogService.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _productService.DeleteByCategoryAsync(id);
