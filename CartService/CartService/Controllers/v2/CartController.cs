@@ -1,10 +1,10 @@
-﻿using Asp.Versioning;
+﻿using System.Text;
+using Asp.Versioning;
 using CartService.Application.Services.Cart;
 using CartService.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RabbitMQ.Client;
-using System.Text;
 
 namespace CartService.Controllers.v2
 {

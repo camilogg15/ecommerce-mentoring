@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "Running dotnet format..."
+dotnet format --verify-no-changes
+
+if [ $? -ne 0 ]; then
+  echo "❌ Code style violations found. Push cancelled."
+  exit 1
+fi
+
+echo "✔ Formatting OK. Push allowed."
+exit 0

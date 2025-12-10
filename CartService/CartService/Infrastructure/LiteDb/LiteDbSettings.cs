@@ -2,6 +2,6 @@
 {
     public class LiteDbSettings
     {
-        public string DatabasePath { get; set; }
+        public string DatabasePath { get; set; } = string.Empty;
     }
 }

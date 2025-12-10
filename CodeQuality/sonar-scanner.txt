@@ -1,0 +1,7 @@
+cde C:\Users\CristianGuevara\source\repos\courses\ecommerce-mentoring\CartService
+dotnet sonarscanner begin /k:"CartService" /d:sonar.host.url="http://localhost:9000" /d:sonar.login="sqa_df124f4d4b927e5b9633b08f1e070b7454a3ad18"
+dotnet sonarscanner end /d:sonar.login="sqa_df124f4d4b927e5b9633b08f1e070b7454a3ad18"
+
+cd C:\Users\CristianGuevara\source\repos\courses\ecommerce-mentoring\CatalogService
+dotnet sonarscanner begin /k:"CatalogService" /d:sonar.host.url="http://localhost:9000" /d:sonar.login="sqa_df124f4d4b927e5b9633b08f1e070b7454a3ad18"
+dotnet sonarscanner end /d:sonar.login="sqa_df124f4d4b927e5b9633b08f1e070b7454a3ad18"

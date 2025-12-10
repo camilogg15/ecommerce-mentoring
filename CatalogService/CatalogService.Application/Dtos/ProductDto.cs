@@ -2,7 +2,7 @@
 {
     public class ProductDto
     {
-        public ProductDto(int id, string name, string description, string imageUrl, Guid categoryId, decimal price, int amount)
+        public ProductDto(int id, string name, string? description, string? imageUrl, Guid categoryId, decimal price, int amount)
         {
             Id = id;
             Name = name;
