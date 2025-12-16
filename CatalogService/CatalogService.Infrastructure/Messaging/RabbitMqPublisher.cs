@@ -12,7 +12,7 @@ namespace CatalogService.Infrastructure.Messaging
         private IConnection? _connection;
         private IChannel? _channel;
 
-        private const string ExchangeName = "catalog.events.exchange";
+        private const string _exchangeName = "catalog.events.exchange";
 
         public RabbitMqPublisher(ILogger<RabbitMqPublisher> logger)
         {
@@ -33,7 +33,7 @@ namespace CatalogService.Infrastructure.Messaging
             _channel = await _connection.CreateChannelAsync();
 
             await _channel.ExchangeDeclareAsync(
-                ExchangeName,
+                _exchangeName,
                 ExchangeType.Fanout,
                 durable: true,
                 autoDelete: false,
@@ -55,7 +55,7 @@ namespace CatalogService.Infrastructure.Messaging
             var body = System.Text.Encoding.UTF8.GetBytes(json);
 
             await _channel!.BasicPublishAsync(
-                exchange: ExchangeName,
+                exchange: _exchangeName,
                 routingKey: "",
                 mandatory: false,
                 body: body,
