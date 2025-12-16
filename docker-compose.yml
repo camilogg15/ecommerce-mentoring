@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  catalog-service:
+    build:
+      context: ./CatalogService
+      dockerfile: CatalogService.API/Dockerfile
+    container_name: catalog-service
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5001:8080"
+    volumes:
+      - catalog-data:/data
+
+  cart-service:
+    build:
+      context: ./CartService
+      dockerfile: CartService/Dockerfile
+    container_name: cart-service
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5002:8080"
+    volumes:
+      - cart-data:/data
+
+volumes:
+  catalog-data:
+  cart-data:
