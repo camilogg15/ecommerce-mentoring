@@ -31,7 +31,7 @@ namespace CartService.Infrastructure.Messaging
             try
             {
                 var json = Encoding.UTF8.GetString(body.Span);
-                _logger.LogDebug("Message received: {Json}", json);
+                _logger.LogInformation("Message received from RabbitMQ: {Json}", json);
 
                 var envelope = JsonSerializer.Deserialize<EventEnvelope>(json);
 

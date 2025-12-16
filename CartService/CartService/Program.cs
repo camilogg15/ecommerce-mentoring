@@ -1,6 +1,8 @@
+﻿using System.Security.Claims;
+
 using Asp.Versioning;
+
 using CartService.Application.Contracts.Messaging;
-using CartService.Application.Events;
 using CartService.Application.Handlers;
 using CartService.Application.Services.Cart;
 using CartService.Application.Services.Dispatcher;
@@ -10,11 +12,14 @@ using CartService.Domain.Models;
 using CartService.Infrastructure.LiteDb;
 using CartService.Infrastructure.Messaging;
 using CartService.Infrastructure.Middleware;
+
 using FluentValidation;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Claims;
+
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace CartService
 {
@@ -27,10 +32,11 @@ namespace CartService
             builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", opts =>
             {
-                opts.Authority = "http://localhost:8080/realms/store-auth";
+                opts.Authority = "http://host.docker.internal:8080/realms/store-auth";
                 opts.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateAudience = false
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
                 };
                 opts.RequireHttpsMetadata = false;
 
@@ -67,9 +73,7 @@ namespace CartService
                     policy.RequireRole("customer", "manager"));
             });
 
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddControllers();            
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
@@ -96,75 +100,68 @@ namespace CartService
             builder.Services.AddScoped<ICartService, Application.Services.Cart.CartService>();
 
             builder.Services.AddSingleton<MessageDispatcher>();
-            builder.Services.AddSingleton<IMessageListener, RabbitMqListener>();
+            builder.Services.AddHostedService<RabbitMqListener>();
 
             // Handlers
             builder.Services.AddTransient<IMessageHandler, ProductUpdatedHandler>();
-            builder.Services.AddSingleton<MessageDispatcher>();
 
-            // Hosted service
-            builder.Services.AddHostedService<MessageListenerHostedService>();
+            builder.Services.AddTransient<Microsoft.Extensions.Options.IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
             // Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
-                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
                     BearerFormat = "JWT",
-                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    In = ParameterLocation.Header,
                     Description = "Enter the JWT in the format: Bearer {token}"
                 });
 
-                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
-                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        new OpenApiSecurityScheme
                         {
-                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            Reference = new OpenApiReference
                             {
-                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Type = ReferenceType.SecurityScheme,
                                 Id = "Bearer"
                             }
                         },
                         Array.Empty<string>()
                     }
                 });
+            });            
 
-                options.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Title = "Cart Service API",
-                    Version = "v1"
-                });
-                options.SwaggerDoc("v2", new OpenApiInfo
-                {
-                    Title = "Cart Service API",
-                    Version = "v2"
-                });
-                var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-            });
-
-            var app = builder.Build();
-
-            app.UseMiddleware<TokenLoggingMiddleware>();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Cart API v1");
-                    options.SwaggerEndpoint("/swagger/v2/swagger.json", "Cart API v2");
-                });
-            }
+            var app = builder.Build();                   
 
             app.UseHttpsRedirection();
+            // Configure the HTTP request pipeline.
+            //if (app.Environment.IsDevelopment())
+            //{
+
+            var provider = app.Services.GetRequiredService<Asp.Versioning.ApiExplorer.IApiVersionDescriptionProvider>();
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                foreach (var description in provider.ApiVersionDescriptions)
+                {
+                    options.SwaggerEndpoint(
+                        $"/swagger/{description.GroupName}/swagger.json",
+                        $"Cart API {description.GroupName.ToUpperInvariant()}");
+                }
+                //options.SwaggerEndpoint("/swagger/v1/swagger.json", "Cart API v1");
+                //options.SwaggerEndpoint("/swagger/v2/swagger.json", "Cart API v2");
+            });
+            //}
+
+            app.UseAuthentication();
             app.UseAuthorization();
+            app.UseMiddleware<TokenLoggingMiddleware>();
             app.MapControllers();
             app.Run();
         }

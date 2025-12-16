@@ -26,7 +26,11 @@ namespace CatalogService.Infrastructure.Messaging
 
             var factory = new ConnectionFactory
             {
-                HostName = "localhost"
+                HostName = "rabbitmq",
+                Port = 5672,
+                UserName = "guest",
+                Password = "guest",
+                VirtualHost = "/"
             };
 
             _connection = await factory.CreateConnectionAsync(cancellationToken);
@@ -54,10 +58,16 @@ namespace CatalogService.Infrastructure.Messaging
             var json = JsonSerializer.Serialize(message);
             var body = System.Text.Encoding.UTF8.GetBytes(json);
 
+            var props = new BasicProperties
+            {
+                Persistent = true
+            };
+
             await _channel!.BasicPublishAsync(
                 exchange: _exchangeName,
                 routingKey: "",
-                mandatory: false,
+                mandatory: true,
+                basicProperties: props,
                 body: body,
                 cancellationToken: cancellationToken
             );

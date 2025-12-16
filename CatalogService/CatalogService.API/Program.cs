@@ -1,4 +1,4 @@
-
+﻿
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CatalogService.API.Swagger;
@@ -38,10 +38,11 @@ namespace CatalogService.API
             builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", opts =>
             {
-                opts.Authority = "http://localhost:8080/realms/store-auth";
+                opts.Authority = "http://host.docker.internal:8080/realms/store-auth";
                 opts.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateAudience = false
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
                 };
                 opts.RequireHttpsMetadata = false;
 
@@ -129,10 +130,16 @@ namespace CatalogService.API
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
             {
-                app.UseSwagger();
+                var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+                db.Database.Migrate();
+            }
+
+            // Configure the HTTP request pipeline.
+            //if (app.Environment.IsDevelopment())
+            //{
+            app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
                     var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
@@ -143,7 +150,7 @@ namespace CatalogService.API
                             $"Catalog API {description.ApiVersion}");
                     }
                 });
-            }
+            //}
 
             app.UseHttpsRedirection();
             app.UseAuthorization();

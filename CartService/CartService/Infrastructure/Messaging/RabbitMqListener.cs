@@ -1,17 +1,17 @@
-﻿using CartService.Application.Contracts.Messaging;
-using CartService.Application.Services.Dispatcher;
+﻿using CartService.Application.Services.Dispatcher;
+
 using RabbitMQ.Client;
 
 namespace CartService.Infrastructure.Messaging
 {
-    public class RabbitMqListener : IMessageListener, IAsyncDisposable
+    public class RabbitMqListener : BackgroundService
     {
         private readonly ILogger<RabbitMqListener> _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly MessageDispatcher _dispatcher;
 
         private IConnection? _connection;
-        private IChannel? _channel;
+        private IChannel? _consumerChannel;
 
         private const string _queueName = "catalog.events";
 
@@ -22,52 +22,95 @@ namespace CartService.Infrastructure.Messaging
             _loggerFactory = loggerFactory;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var factory = new ConnectionFactory
             {
-                HostName = "localhost"
+                HostName = "rabbitmq",
+                Port = 5672,
+                UserName = "guest",
+                Password = "guest",
+                VirtualHost = "/"
             };
 
-            _connection = await factory.CreateConnectionAsync(cancellationToken);
-            _channel = await _connection.CreateChannelAsync();
+            // Retry loop
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    _logger.LogInformation("Connecting to RabbitMQ...");
+                    _connection = await factory.CreateConnectionAsync(stoppingToken);
+                    _consumerChannel = await _connection.CreateChannelAsync();
 
-            await _channel.QueueDeclareAsync(
-                queue: _queueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null,
-                cancellationToken: cancellationToken
-            );
+                    await _consumerChannel.QueueDeclareAsync(
+                        queue: _queueName,
+                        durable: true,
+                        exclusive: false,
+                        autoDelete: false,
+                        arguments: null,
+                        cancellationToken: stoppingToken);
 
-            _logger.LogInformation("Queue declared: {Queue}", _queueName);
+                    await _consumerChannel.QueueBindAsync(
+                        queue: _queueName,
+                        exchange: "catalog.events.exchange",
+                        routingKey: "",
+                        cancellationToken: stoppingToken);
 
-            var consumer = new RabbitConsumer(_channel, _dispatcher, _loggerFactory);
+                    await _consumerChannel.BasicQosAsync(
+                        prefetchSize: 0,
+                        prefetchCount: 1,
+                        global: false,
+                        cancellationToken: stoppingToken);                    
 
-            await _channel.BasicConsumeAsync(
-                queue: _queueName,
-                autoAck: false,
-                consumer: consumer,
-                cancellationToken: cancellationToken
-            );
+                    var consumer = new RabbitConsumer(_consumerChannel, _dispatcher, _loggerFactory);
 
-            _logger.LogInformation("RabbitMQ listener started and consuming queue {Queue}", _queueName);
+                    await _consumerChannel.BasicConsumeAsync(
+                        queue: _queueName,
+                        autoAck: false,
+                        consumer: consumer,
+                        cancellationToken: stoppingToken);                    
+
+                    _logger.LogInformation(
+                        "RabbitMQ listener connected and consuming queue {Queue}",
+                        _queueName);
+
+                    while (!stoppingToken.IsCancellationRequested)
+                    {
+                        await Task.Delay(1000, stoppingToken);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Shutdown normal
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "RabbitMQ not ready yet. Retrying in 5 seconds...");
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                }
+            }
         }
 
-        public async ValueTask DisposeAsync()
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_channel != null)
+            _logger.LogInformation("Stopping RabbitMQ listener...");
+
+            if (_consumerChannel is not null)
             {
-                await _channel.CloseAsync();
-                _channel.Dispose();
+                await _consumerChannel.CloseAsync();
+                _consumerChannel.Dispose();
             }
 
-            if (_connection != null)
+            if (_connection is not null)
             {
                 await _connection.CloseAsync();
                 _connection.Dispose();
             }
+
+            await base.StopAsync(cancellationToken);
         }
     }
 }
