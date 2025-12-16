@@ -13,7 +13,7 @@ namespace CartService.Infrastructure.Messaging
         private IConnection? _connection;
         private IChannel? _channel;
 
-        private const string QueueName = "catalog.events";
+        private const string _queueName = "catalog.events";
 
         public RabbitMqListener(ILogger<RabbitMqListener> logger, MessageDispatcher dispatcher, ILoggerFactory loggerFactory)
         {
@@ -33,7 +33,7 @@ namespace CartService.Infrastructure.Messaging
             _channel = await _connection.CreateChannelAsync();
 
             await _channel.QueueDeclareAsync(
-                queue: QueueName,
+                queue: _queueName,
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
@@ -41,18 +41,18 @@ namespace CartService.Infrastructure.Messaging
                 cancellationToken: cancellationToken
             );
 
-            _logger.LogInformation("Queue declared: {Queue}", QueueName);
+            _logger.LogInformation("Queue declared: {Queue}", _queueName);
 
             var consumer = new RabbitConsumer(_channel, _dispatcher, _loggerFactory);
 
             await _channel.BasicConsumeAsync(
-                queue: QueueName,
+                queue: _queueName,
                 autoAck: false,
                 consumer: consumer,
                 cancellationToken: cancellationToken
             );
 
-            _logger.LogInformation("RabbitMQ listener started and consuming queue {Queue}", QueueName);
+            _logger.LogInformation("RabbitMQ listener started and consuming queue {Queue}", _queueName);
         }
 
         public async ValueTask DisposeAsync()
